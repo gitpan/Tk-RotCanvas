@@ -1,22 +1,7 @@
 package Tk::RotCanvas;
 
-###############################################
-# Tk::RotCanvas.pm
-#
-# $Author: aqumsieh $
-# $Id: RotCanvas.pm,v 1.1 2000/06/07 20:52:19 aqumsieh Exp aqumsieh $
-# $Date: 2000/06/07 20:52:19 $
-# $Revision: 1.1 $
-#
-# $Log: RotCanvas.pm,v $
-# Revision 1.1  2000/06/07 20:52:19  aqumsieh
-# Initial revision
-#
-#
-###############################################
-
 use vars qw/$VERSION/;
-($VERSION) = '$Revision: 1.1 $ ' =~ /(\d+\.\d+)/;
+$VERSION = 1.2;
 
 use Tk::widgets qw/Canvas/;
 use base qw/Tk::Derived Tk::Canvas/;
@@ -38,25 +23,25 @@ sub Populate {
     $self->SUPER::Populate($args);
 }
 
-# This is the new rotate() method. It takes as input the
-# id of the object to rotate, and the angle to rotate it with.
-# It then rotates the object about its center by the given angle
-
 my %_cant_handle = (
 		    bitmap => 1,
 		    image  => 1,
 		    arc    => 1,
 		    text   => 1,
 		    window => 1,
-		    oval   => 1,
 		   );
 
 my %_rotate_methods = (
 		       line      => \&_rotate_line,
 		       polygon   => \&_rotate_poly,
+		       oval      => \&_rotate_poly,
 		      );
 
 use constant PI => 3.14159269;
+
+# This is the new rotate() method. It takes as input the
+# id of the object to rotate, and the angle to rotate it with.
+# It then rotates the object about its center by the given angle
 
 sub rotate {
     my ($self, $id, $angle, $x, $y) = @_;
@@ -162,9 +147,16 @@ sub create {
 
     if ($type eq 'rectangle') {
 	$self->_rect_to_poly(@_);
+    } elsif ($type eq 'oval') {
+	$self->_oval_to_poly(@_);
     } else {
 	$self->SUPER::create($type, @_);
     }
+}
+
+sub createOval {
+    my $self = shift;
+    $self->_oval_to_poly(@_);
 }
 
 # This sub transforms the rectangle coords to poly coords.
@@ -180,6 +172,29 @@ sub _rect_to_poly {
 			 $x1, $y2,
 			 @_,
 			);
+}
+
+sub _oval_to_poly {
+    my $self = shift;
+
+    my ($x1, $y1, $x2, $y2) = splice @_ => 0, 4;
+
+    my $steps = 100;
+    my $xc = ($x2 - $x1) / 2;
+    my $yc = ($y2 - $y1) / 2;
+    my @pointlist;
+
+    for my $i (0..$steps) {
+	my $theta = (PI * 2)* ($i / $steps);
+	my $x = $xc * cos($theta) - $xc + $x2;
+	my $y = $yc * sin($theta) + $yc + $y1;
+	push(@pointlist, $x, $y);
+    }
+
+    push(@_, '-fill', undef)      unless grep {/-fill/   } @_;
+    push(@_, '-outline', 'black') unless grep {/-outline/} @_;
+
+    $self->createPolygon(@pointlist, @_);
 }
 
 # This sub finds the center of mass of a polygon.
@@ -273,9 +288,13 @@ Rectangles
 
 Polygons
 
+=item *
+
+Ovals
+
 =back
 
-All other object types (bitmap, image, arc, text, window and oval) can
+All other object types (bitmap, image, arc, text and window) can
 not be handled yet. A warning is issued if the user tries to rotate one
 of these object types. Hopefully, more types will be handled in the future.
 
@@ -286,9 +305,15 @@ B<createRectangle()> and B<create()> and changes all rectangles to polygons.
 The user should not be alarmed if B<type()> returned I<polygon> when a
 I<rectangle> was expected.
 
+Similarly, ovals are converted into polygons.
+
+=head1 THANKS
+
+Special thanks go to Larry Shatzer for developing the code to handle ovals.
+
 =head1 AUTHOR
 
-Ala Qumsieh I<aqumsieh@hyperchip.com>
+Ala Qumsieh I<qumsieh@cim.mcgill.ca>
 
 =head1 COPYRIGHTS
 

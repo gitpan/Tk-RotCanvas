@@ -27,7 +27,7 @@ WriteMakefile(
 			      },
 	      ($] >= 5 ? (
 			  ABSTRACT => 'Canvas with rotatable objects',
-			  AUTHOR   => 'Ala Qumsieh (aqumsieh@hyperchip.com)',
+			  AUTHOR   => 'Ala Qumsieh (qumsieh@cim.mcgill.ca)',
 			 ) : (),
 	      ),
 	     );
